@@ -1,6 +1,10 @@
 import yfinance as yf
 import pandas as pd
-import argparse
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from datetime import date
+import json
 
 def drawdowns_from_last_peak(symbol, start, end, threshold):
     data = yf.download(symbol, start=start, end=end, progress=False, auto_adjust=True)
@@ -47,15 +51,31 @@ def drawdowns_from_last_peak(symbol, start, end, threshold):
 
     return pd.DataFrame(events)
 
+def send_email(df, report_html, config_file="config.json"):
+    with open(config_file, "r") as f:
+        config = json.load(f)
+
+    sender_email = config["email"]
+    sender_password = config["password"]
+    recipient_email = config["recipient"]
+
+    last_event = df.tail(1)
+    dd = last_event.iloc[0]
+
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = f"S&P 500 Drawdown {dd['max_drawdown']} (from {dd['peak_date']} to {dd['trough_date']})"
+    msg["From"] = sender_email
+    msg["To"] = recipient_email
+
+    body = MIMEText(report_html, "html")
+    msg.attach(body)
+
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+        server.login(sender_email, sender_password)
+        server.sendmail(sender_email, recipient_email, msg.as_string())
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Find drawdowns for a financial instrument.")
-    parser.add_argument("symbol", nargs="?", default="^GSPC", help="Ticker symbol (default: ^GSPC)")
-    parser.add_argument("start", nargs="?", default="2025-01-01", help="Start date YYYY-MM-DD (default: 2024-01-01)")
-    parser.add_argument("end", nargs="?", default="2025-12-31", help="End date YYYY-MM-DD (default: 2024-12-31)")
-    parser.add_argument("threshold", nargs="?", type=float, default=2.0, help="Minimum drawdown percentage (default: 2.0)")
-
-    args = parser.parse_args()
-
-    df = drawdowns_from_last_peak(args.symbol, args.start, args.end, args.threshold)
-    df.to_html("drawdowns.html", index=False)
-    print(df)
+    df = drawdowns_from_last_peak("^GSPC", "2024-01-01", date.today().strftime("%Y-%m-%d"), 5.0)
+    report_html = df.to_html(index=False)
+    send_email(df, report_html)
+    print("Email sent successfully!")

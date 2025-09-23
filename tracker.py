@@ -51,7 +51,22 @@ def drawdowns_from_last_peak(symbol, start, end, threshold):
 
     return pd.DataFrame(events)
 
-def send_email(df, report_html, config_file="config.json"):
+def last_drawdown(symbol, start, end):
+    data = yf.download(symbol, start=start, end=end, progress=False, auto_adjust=True)
+    close = data["Close"].squeeze("columns").dropna().sort_index()
+
+    peak_val = close.max()
+    current_price = close.iloc[-1]
+
+    return {
+        "peak_date": close.idxmax().strftime("%d-%m-%Y"),
+        "peak_value": round(float(peak_val), 2),
+        "current_date": close.index[-1].strftime("%d-%m-%Y"),
+        "current_price": round(float(current_price), 2),
+        "drawdown": round((peak_val - current_price) / peak_val * 100, 2),
+    }
+
+def send_email(dd, config_file="config.json"):
     with open(config_file, "r") as f:
         config = json.load(f)
 
@@ -59,23 +74,17 @@ def send_email(df, report_html, config_file="config.json"):
     sender_password = config["password"]
     recipient_email = config["recipient"]
 
-    last_event = df.tail(1)
-    dd = last_event.iloc[0]
-
     msg = MIMEMultipart("alternative")
-    msg["Subject"] = f"S&P 500 Drawdown {dd['max_drawdown']} (from {dd['peak_date']} to {dd['trough_date']})"
+    msg["Subject"] = f"S&P500 Drawdown:{dd['drawdown']}% (from {dd['peak_date']} to {dd['current_date']}) Today's Value:{dd['peak_value']} Last Peak:{dd['peak_value']}"
     msg["From"] = sender_email
     msg["To"] = recipient_email
-
-    body = MIMEText(report_html, "html")
-    msg.attach(body)
 
     with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
         server.login(sender_email, sender_password)
         server.sendmail(sender_email, recipient_email, msg.as_string())
 
 if __name__ == "__main__":
-    df = drawdowns_from_last_peak("^GSPC", "2024-01-01", date.today().strftime("%Y-%m-%d"), 5.0)
-    report_html = df.to_html(index=False)
-    send_email(df, report_html)
+    dd = last_drawdown("^GSPC", "2024-01-01", date.today().strftime("%Y-%m-%d"))
+    #report_html = df.to_html(index=False)
+    send_email(dd)
     print("Email sent successfully!")

@@ -75,7 +75,7 @@ def send_email(dd, config_file="config.json"):
     recipient_email = config["recipient"]
 
     msg = MIMEMultipart("alternative")
-    msg["Subject"] = f"S&P500 Drawdown:{dd['drawdown']}% (from {dd['peak_date']} to {dd['current_date']}) Today's Value:{dd['peak_value']} Last Peak:{dd['peak_value']}"
+    msg["Subject"] = f"S&P500 Drawdown:{dd['drawdown']}% (from {dd['peak_date']} to {dd['current_date']})Last Peak:{dd['peak_value']} Today's Value:{dd['current_price']} "
     msg["From"] = sender_email
     msg["To"] = recipient_email
 

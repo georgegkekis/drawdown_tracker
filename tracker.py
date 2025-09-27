@@ -3,6 +3,7 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from datetime import date
 import json
+import os
 
 def last_drawdown(symbol, start, end):
     data = yf.download(symbol, start=start, end=end, progress=False, auto_adjust=True)
@@ -20,7 +21,9 @@ def last_drawdown(symbol, start, end):
     }
 
 def send_email(dd, config_file="config.json"):
-    with open(config_file, "r") as f:
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    config_path = os.path.join(script_dir, config_file)
+    with open(config_path, "r") as f:
         config = json.load(f)
 
     sender_email = config["email"]

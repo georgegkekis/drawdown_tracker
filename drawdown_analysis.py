@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 import argparse
 import yfinance as yf
 import pandas as pd

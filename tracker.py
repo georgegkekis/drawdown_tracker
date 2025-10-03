@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 import yfinance as yf
 import smtplib
 from email.mime.multipart import MIMEMultipart

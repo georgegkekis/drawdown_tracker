@@ -50,7 +50,7 @@ if __name__ == "__main__":
     parser.add_argument("--symbol", default="^GSPC", help="Ticker, (default: ^GSPC)")
     parser.add_argument("--start", default="2024-01-01", help="Start date YYYY-MM-DD (default: 2024-01-01)")
     parser.add_argument("--end", default=date.today().strftime("%Y-%m-%d"), help="End date YYYY-MM-DD (default: today)")
-    parser.add_argument("--threshold", type=float, default=4.0, help="Minimum drawdown percentage (default: 5.0)")
+    parser.add_argument("--threshold", type=float, default=4.0, help="Minimum drawdown percentage (default: 4.0)")
     parser.add_argument("--output_file", default="drawdown", help="Output file name")
     args = parser.parse_args()
 

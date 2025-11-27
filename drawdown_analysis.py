@@ -52,9 +52,9 @@ if __name__ == "__main__":
     parser.add_argument("--start", default="2024-01-01", help="Start date YYYY-MM-DD (default: 2024-01-01)")
     parser.add_argument("--end", default=date.today().strftime("%Y-%m-%d"), help="End date YYYY-MM-DD (default: today)")
     parser.add_argument("--threshold", type=float, default=4.0, help="Minimum drawdown percentage (default: 4.0)")
-    parser.add_argument("--output_file", default="drawdown", help="Output file name")
     args = parser.parse_args()
 
     df = drawdowns_from_last_peak(args.symbol, args.start, args.end, args.threshold)
-    df.to_html(f"{args.output_file}.html", index=False)
+    filename = f"Drawdowns_{args.symbol}_from_{args.start}_to_{args.end}.html"
+    df.to_html(filename, index=False)
     print(df)

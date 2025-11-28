@@ -16,6 +16,7 @@ import json
 import os
 import logging
 import sys
+import argparse
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 log_file = os.path.join(script_dir, "drawdown_tracker.log")
@@ -71,7 +72,7 @@ def last_drawdown(symbol):
     except Exception as e:
         logger.error(f"Error calculating drawdown for {symbol}: {e}")
 
-def send_email(dd, config_file="config.json"):
+def send_email(symbol, dd, config_file="config.json"):
     """
     Send a drawdown summary email using Gmail SMTP.
 
@@ -102,7 +103,7 @@ def send_email(dd, config_file="config.json"):
         recipient_email = config["recipient"]
 
         msg = MIMEMultipart("alternative")
-        msg["Subject"] = f"S&P500 Drawdown:{dd['drawdown']}% (from {dd['peak_date']} to {dd['current_date']})Last Peak:{dd['peak_value']} Today's Value:{dd['current_price']} "
+        msg["Subject"] = f"{symbol} Drawdown:{dd['drawdown']}% (from {dd['peak_date']} to {dd['current_date']})Last Peak:{dd['peak_value']} Today's Value:{dd['current_price']} "
         msg["From"] = sender_email
         msg["To"] = recipient_email
 
@@ -113,6 +114,13 @@ def send_email(dd, config_file="config.json"):
         logger.error(f"Error sending email: {e}")
 
 if __name__ == "__main__":
-    dd = last_drawdown("^GSPC")
-    send_email(dd)
-    logger.info("Email sent successfully!")
+    parser = argparse.ArgumentParser(description="Drawdown Tracker for a financial instrument")
+    parser.add_argument("--symbol", default="^GSPC", help="Ticker, (default: ^GSPC)")
+    args = parser.parse_args()
+
+    dd = last_drawdown(args.symbol)
+    if dd:
+        send_email(args.symbol, dd)
+        logger.info(f"Email sent successfully for {args.symbol}!")
+    else:
+        logger.critical(f"Drawdown calculation failed for {args.symbol}. Email not sent.")

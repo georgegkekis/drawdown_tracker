@@ -3,9 +3,9 @@
 Drawdown Tracker
 
 This script downloads historical price data for a financial instrument,
-calculates the most recent drawdown from the peak value within a given
-date range, and emails a summary of the results. It uses Yahoo Finance
-(yfinance) for data retrieval and Gmail SMTP for sending notifications.
+calculates the most recent drawdown from the peak value, and emails a summary of the
+results. It uses Yahoo Finance (yfinance) for data retrieval and Gmail SMTP for
+sending notifications.
 """
 
 import yfinance as yf
@@ -15,18 +15,14 @@ from datetime import date
 import json
 import os
 
-def last_drawdown(symbol, start, end):
+def last_drawdown(symbol):
     """
-    Calculate the most recent drawdown for a symbol within a date range.
+    Calculate the most recent drawdown for a symbol.
 
     Parameters
     ----------
     symbol : str
         The ticker symbol (e.g., "^GSPC").
-    start : str
-        Start date in "YYYY-MM-DD" format.
-    end : str
-        End date in "YYYY-MM-DD" format.
 
     Returns
     -------
@@ -38,7 +34,7 @@ def last_drawdown(symbol, start, end):
         - current_price (float): Latest closing price.
         - drawdown (float): Percentage drop from the peak.
     """
-    data = yf.download(symbol, start=start, end=end, progress=False, auto_adjust=True)
+    data = yf.download(symbol, period="max", progress=False, auto_adjust=True)
     close = data["Close"].squeeze("columns").dropna().sort_index()
 
     peak_val = close.max()
@@ -91,7 +87,6 @@ def send_email(dd, config_file="config.json"):
         server.sendmail(sender_email, recipient_email, msg.as_string())
 
 if __name__ == "__main__":
-    dd = last_drawdown("^GSPC", "2024-01-01", date.today().strftime("%Y-%m-%d"))
-    #report_html = df.to_html(index=False)
+    dd = last_drawdown("^GSPC")
     send_email(dd)
     print("Email sent successfully!")

@@ -20,15 +20,15 @@ I use it to understand the historical behavior of an instrument — specifically
 git clone https://github.com/georgegkekis/drawdown_tracker.git
 cd drawdown_tracker
 pip install -r requirements
-
+```
 Create a config.json for email credentials:
-
-`{`
-`  "email": "your_gmail@gmail.com",`
-`  "password": "your_gmail_app_password"`
-`  "recipient" : "your_recipient@gmail.com"`
-`}`
-
+```
+{
+  "email": "your_gmail@gmail.com",
+  "password": "your_gmail_app_password"
+  "recipient" : "your_recipient@gmail.com"
+}
+```
 Use a Gmail App Password (requires 2FA).
 
 ## Usage
@@ -40,9 +40,10 @@ Use a Gmail App Password (requires 2FA).
 - threshold — minimum drawdown percentage (default: 5.0)
 
 Example:
-`python3 tracker.py ^GSPC 2024-01-01 today 5.0`
-`python3 tracker.py`
-
+```
+python3 tracker.py ^GSPC 2024-01-01 today 5.0
+python3 tracker.py
+```
 - python drawdown_analysis.py [symbol] [start_date] [end_date] [threshold]
 - symbol  - The market ticker to analyze (e.g., ^GSPC for S&P 500).
 - start  - Start date for the analysis in YYYY-MM-DD format.
@@ -50,11 +51,12 @@ Example:
 - threshold - Minimum drawdown percentage to report.
 
 Example:
-`python3 drawdown_analysis.py \`
-`    --symbol ^GSPC \`
-`    --start 2010-01-01 \`
-`    --end 2025-01-01 \`
-`    --threshold 5 \`
-`    --output_file sp500_drawdowns`
-
+```
+python3 drawdown_analysis.py \
+    --symbol ^GSPC \
+    --start 2010-01-01 \
+    --end 2025-01-01 \
+    --threshold 5 \
+    --output_file sp500_drawdowns
+```
 

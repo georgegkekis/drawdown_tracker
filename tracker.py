@@ -14,6 +14,24 @@ from email.mime.multipart import MIMEMultipart
 from datetime import date
 import json
 import os
+import logging
+import sys
+
+script_dir = os.path.dirname(os.path.abspath(__file__))
+log_file = os.path.join(script_dir, "drawdown_tracker.log")
+
+logger = logging.getLogger("DrawdownTracker")
+logger.setLevel(logging.INFO)
+
+formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s", datefmt="%d-%m-%Y %H:%M:%S")
+
+file_handler = logging.FileHandler(log_file)
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
+
+console_handler = logging.StreamHandler(sys.stdout)
+console_handler.setFormatter(formatter)
+logger.addHandler(console_handler)
 
 def last_drawdown(symbol):
     """
@@ -34,19 +52,24 @@ def last_drawdown(symbol):
         - current_price (float): Latest closing price.
         - drawdown (float): Percentage drop from the peak.
     """
-    data = yf.download(symbol, period="max", progress=False, auto_adjust=True)
-    close = data["Close"].squeeze("columns").dropna().sort_index()
+    try:
+        data = yf.download(symbol, period="max", progress=False, auto_adjust=True)
+        close = data["Close"].squeeze("columns").dropna().sort_index()
 
-    peak_val = close.max()
-    current_price = close.iloc[-1]
+        peak_val = close.max()
+        current_price = close.iloc[-1]
 
-    return {
-        "peak_date": close.idxmax().strftime("%d-%m-%Y"),
-        "peak_value": round(float(peak_val), 2),
-        "current_date": close.index[-1].strftime("%d-%m-%Y"),
-        "current_price": round(float(current_price), 2),
-        "drawdown": round((peak_val - current_price) / peak_val * 100, 2),
-    }
+        logger.info(f"Calculated drawdown")
+
+        return {
+            "peak_date": close.idxmax().strftime("%d-%m-%Y"),
+            "peak_value": round(float(peak_val), 2),
+            "current_date": close.index[-1].strftime("%d-%m-%Y"),
+            "current_price": round(float(current_price), 2),
+            "drawdown": round((peak_val - current_price) / peak_val * 100, 2),
+        }
+    except Exception as e:
+        logger.error(f"Error calculating drawdown for {symbol}: {e}")
 
 def send_email(dd, config_file="config.json"):
     """
@@ -68,25 +91,28 @@ def send_email(dd, config_file="config.json"):
     -----
     - Requires an app password (not a normal Gmail password).
     """
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    config_path = os.path.join(script_dir, config_file)
-    with open(config_path, "r") as f:
-        config = json.load(f)
+    try:
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        config_path = os.path.join(script_dir, config_file)
+        with open(config_path, "r") as f:
+            config = json.load(f)
 
-    sender_email = config["email"]
-    sender_password = config["password"]
-    recipient_email = config["recipient"]
+        sender_email = config["email"]
+        sender_password = config["password"]
+        recipient_email = config["recipient"]
 
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = f"S&P500 Drawdown:{dd['drawdown']}% (from {dd['peak_date']} to {dd['current_date']})Last Peak:{dd['peak_value']} Today's Value:{dd['current_price']} "
-    msg["From"] = sender_email
-    msg["To"] = recipient_email
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = f"S&P500 Drawdown:{dd['drawdown']}% (from {dd['peak_date']} to {dd['current_date']})Last Peak:{dd['peak_value']} Today's Value:{dd['current_price']} "
+        msg["From"] = sender_email
+        msg["To"] = recipient_email
 
-    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-        server.login(sender_email, sender_password)
-        server.sendmail(sender_email, recipient_email, msg.as_string())
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+            server.login(sender_email, sender_password)
+            server.sendmail(sender_email, recipient_email, msg.as_string())
+    except Exception as e:
+        logger.error(f"Error sending email: {e}")
 
 if __name__ == "__main__":
     dd = last_drawdown("^GSPC")
     send_email(dd)
-    print("Email sent successfully!")
+    logger.info("Email sent successfully!")

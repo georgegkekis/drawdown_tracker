@@ -1,4 +1,13 @@
 #!/usr/bin/python3
+"""
+Drawdown Tracker
+
+This script downloads historical price data for a financial instrument,
+calculates the most recent drawdown from the peak value within a given
+date range, and emails a summary of the results. It uses Yahoo Finance
+(yfinance) for data retrieval and Gmail SMTP for sending notifications.
+"""
+
 import yfinance as yf
 import smtplib
 from email.mime.multipart import MIMEMultipart
@@ -7,6 +16,28 @@ import json
 import os
 
 def last_drawdown(symbol, start, end):
+    """
+    Calculate the most recent drawdown for a symbol within a date range.
+
+    Parameters
+    ----------
+    symbol : str
+        The ticker symbol (e.g., "^GSPC").
+    start : str
+        Start date in "YYYY-MM-DD" format.
+    end : str
+        End date in "YYYY-MM-DD" format.
+
+    Returns
+    -------
+    dict
+        A dictionary containing:
+        - peak_date (str): Date of the highest closing price.
+        - peak_value (float): Highest closing price.
+        - current_date (str): Date of the latest price.
+        - current_price (float): Latest closing price.
+        - drawdown (float): Percentage drop from the peak.
+    """
     data = yf.download(symbol, start=start, end=end, progress=False, auto_adjust=True)
     close = data["Close"].squeeze("columns").dropna().sort_index()
 
@@ -22,6 +53,25 @@ def last_drawdown(symbol, start, end):
     }
 
 def send_email(dd, config_file="config.json"):
+    """
+    Send a drawdown summary email using Gmail SMTP.
+
+    Parameters
+    ----------
+    dd : dict
+        Drawdown dictionary returned from last_drawdown().
+    config_file : str, optional
+        Path to the configuration file containing:
+        {
+            "email": "sender@gmail.com",
+            "password": "gmail_app_password",
+            "recipient": "recipient@gmail.com"
+        }
+
+    Notes
+    -----
+    - Requires an app password (not a normal Gmail password).
+    """
     script_dir = os.path.dirname(os.path.abspath(__file__))
     config_path = os.path.join(script_dir, config_file)
     with open(config_path, "r") as f:

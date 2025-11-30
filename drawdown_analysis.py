@@ -61,7 +61,8 @@ def drawdowns_from_last_peak(symbol, start, end, threshold):
                         "trough_date": trough_date.strftime("%d-%m-%Y"),
                         "peak_value": round(float(peak_value), 2),
                         "trough_value": round(float(trough_value), 2),
-                        "max_drawdown": f"{round(max_dd*100, 2)}%"
+                        "max_drawdown": round(max_dd * 100, 2),
+                        "duration_days": (trough_date - peak_date).days
                     })
             peak_date, peak_value = date, price
             trough_date, trough_value = date, price
@@ -78,7 +79,8 @@ def drawdowns_from_last_peak(symbol, start, end, threshold):
                 "trough_date": trough_date.strftime("%d-%m-%Y"),
                 "peak_value": round(float(peak_value), 2),
                 "trough_value": round(float(trough_value), 2),
-                "max_drawdown": f"{round(max_dd*100, 2)}%"
+                "max_drawdown": round(max_dd * 100, 2),
+                "duration_days": (trough_date - peak_date).days
             })
 
     return pd.DataFrame(events)
@@ -92,6 +94,31 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     df = drawdowns_from_last_peak(args.symbol, args.start, args.end, args.threshold)
+    df = df.rename(columns={
+        "peak_date": "Peak Date",
+        "trough_date": "Trough Date",
+        "peak_value": "Peak Value",
+        "trough_value": "Trough Value",
+        "max_drawdown": "Max Drawdown (%)",
+        "duration_days": "Duration (Days)"
+    })
     filename = f"Drawdowns_{args.symbol}_from_{args.start}_to_{args.end}.html"
-    df.to_html(filename, index=False)
     print(df)
+    styled = (
+        df.style
+          .format({"Peak Value": "{:,.2f}", "Trough Value": "{:,.2f}", "Max Drawdown (%)": "{:.2f}%"})
+          .background_gradient(cmap="Reds", subset=["Max Drawdown (%)"])
+          .bar(subset=["Max Drawdown (%)"], color="#ffb3b3")
+          .bar(subset=["Duration (Days)"], color="#87cefa")
+          .set_table_styles([
+              {"selector": "th", "props": "background:#2c3e50; color:white; padding:8px;"},
+              {"selector": "td", "props": "padding:8px; border-bottom:1px solid #ddd;"},
+              {"selector": "tr:hover", "props": "background-color:#e6f7ff;"},
+          ])
+          .hide(axis="index")
+    )
+
+    html_page = styled.to_html()
+
+    with open(filename, "w") as f:
+        f.write(html_page)

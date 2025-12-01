@@ -33,16 +33,13 @@ Use a Gmail App Password (requires 2FA).
 
 ## Usage
 
-- python tracker.py [symbol] [start_date] [end_date] [threshold]
+- python tracker.py [symbol]
 - symbol — ticker symbol (default: ^GSPC)
-- start_date — format YYYY-MM-DD (default: 2024-01-01)
-- end_date — format YYYY-MM-DD or today (default: today)
-- threshold — minimum drawdown percentage (default: 5.0)
 
 Example:
 ```
-python3 tracker.py ^GSPC 2024-01-01 today 5.0
-python3 tracker.py
+./tracker.py ^GSPC 2024-01-01 today 5.0
+./tracker.py
 ```
 - python drawdown_analysis.py [symbol] [start_date] [end_date] [threshold]
 - symbol  - The market ticker to analyze (e.g., ^GSPC for S&P 500).
@@ -52,11 +49,7 @@ python3 tracker.py
 
 Example:
 ```
-python3 drawdown_analysis.py \
-    --symbol ^GSPC \
-    --start 2010-01-01 \
-    --end 2025-01-01 \
-    --threshold 5 \
-    --output_file sp500_drawdowns
+./drawdown_analysis.py --symbol ^GSPC --start 2010-01-01 --end 2025-01-01 --threshold 5
+./drawdown_analysis
 ```
 
